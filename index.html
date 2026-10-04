@@ -83,7 +83,7 @@ const firebaseConfig = { apiKey: "AIzaSyDaBOIgBYqTsMrW5vca1_Y4mdGRSdU4b50", auth
 firebase.initializeApp(firebaseConfig); const db=firebase.firestore();
 const ADMIN_WA="+918761958928";
 const AREAS=["Dirak Charali","Aamguri","Bordirak","Khatua","Hunjan","Navajyoti","Simoluguri","Uttar Bisrampur","Dakhin Bisrampur","Kailashpur","Dimbujora","Tongona","Gutibari","Tongona-Nagaon","Dirakgate","Modarkhat","Digholi-pothar","Huwonipothar","Namhullung","Tiniali Nagaon","Betoni","Wathoi","Litong","Talpothar","Hatigarh","Dumsi","Sitpani"];
-let CATS=["All","Groceries","Snacks","Cold Drinks","Biscuits","Oil & Masala","Daily Needs","Fruits"];
+const CATS=["All","Groceries","Snacks","Cold Drinks","Biscuits","Oil & Masala","Daily Needs","Fruits"];
 async function loadCats(){
   try{
     const d=await db.collection('settings').doc('categories').get();
