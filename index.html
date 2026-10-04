@@ -230,7 +230,7 @@ async function loadMyOrders(){
   if(!phone){list.innerHTML=`<p class="text-center py-10 text-gray-400">Phone save kora nai<br>Profile t Phone save kora</p>`; return;}
   list.innerHTML=`<p class="text-center py-6">⏳ Loading ${phone}...</p>`;
   try{
-    const snap=await db.collection('orders').where('customerPhone','==',phone).orderBy('createdAt','desc').limit(15).get();
+    const snap=await db.collection('orders').where('customerPhone','==',phone).get();
     if(snap.empty){list.innerHTML=`<p class="text-center py-10">No orders yet</p>`; return;}
     list.innerHTML=snap.docs.map(doc=>{
       const d=doc.data();
