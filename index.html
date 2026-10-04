@@ -221,7 +221,8 @@ function updateTrack(d){
    if(status==='delivered') sText.innerText='✅ Delivered';
  }
  if(status==='delivered'){ localStorage.removeItem('dk_active_order'); setTimeout(()=>{document.getElementById('activeOrderBar')?.classList.add('hidden'); closeTrack();},3000); }
-}function openMyOrders(){document.getElementById('myOrdersM').classList.remove('hidden'); loadMyOrders();}
+}
+ function openMyOrders(){document.getElementById('myOrdersM').classList.remove('hidden'); loadMyOrders();}
 function closeMyOrders(){document.getElementById('myOrdersM').classList.add('hidden');}
 async function loadMyOrders(){
   const p=JSON.parse(localStorage.getItem('dk_profile')||'{}'); const phone=p.phone||'';
@@ -263,6 +264,7 @@ function toast(m){const t=document.getElementById('toast'); document.getElementB
       <button onclick="viewActiveOrder()" class="text-xs bg-black text-white px-3 py-1 rounded-full mt-1">Track</button>
     </div>
   </div>
-</div>
+</div><!-- MY ORDERS MODAL -->
+<div id="myOrdersM" class="fixed inset-0 z-[80] hidden"><div class="absolute inset-0 bg-black/50" onclick="closeMyOrders()"></div><div class="absolute bottom-0 left-0 right-0 md:top-1/2 md:-translate-y-1/2 md:left-1/2 md:-translate-x-1/2 md:w-[480px] bg-white dark:bg-darkCard md:rounded-[24px] rounded-t-[24px] max-h-[90vh] flex flex-col"><div class="p-5 border-b dark:border-gray-700 flex justify-between items-center"><h3 class="font-bold dark:text-white">📦 My Orders</h3><button onclick="closeMyOrders()" class="w-8 h-8 bg-gray-100 dark:bg-darkBg rounded-full"><i class="fa-solid fa-xmark"></i></button></div><div id="myOrdersList" class="flex-1 overflow-y-auto p-4 space-y-3"><p class="text-center py-10">Loading...</p></div></div></div>
 </body>
 </html>
