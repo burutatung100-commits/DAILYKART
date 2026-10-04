@@ -1,62 +1,24 @@
 {
-  "name": "DailyKart - Fresh in 30 mins",
+  "name": "DailyKart - Fast Local Delivery",
   "short_name": "DailyKart",
-  "description": "27 villages • Hunjan • Fast grocery delivery in 30 mins",
-  "start_url": "/index.html",
-  "scope": "/",
+  "description": "Fresh groceries in 30 mins - Dirak, Tinsukia - 27 Villages",
+  "start_url": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
   "background_color": "#FFF7F2",
   "theme_color": "#FF6B2B",
   "orientation": "portrait",
-  "categories": ["shopping", "food", "groceries"],
-  "lang": "en",
-  "dir": "ltr",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081648.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/891/891419.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081648.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/891/891419.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081648.png",
-      "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800",
-      "sizes": "800x600",
-      "type": "image/jpeg",
-      "form_factor": "wide"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "My Orders - Live Tracking",
-      "short_name": "Orders",
-      "description": "Track your live order with OTP",
-      "url": "/index.html#track",
-      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3081/3081648.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Cart",
-      "short_name": "Cart",
-      "url": "/index.html#cart",
-      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3081/3081648.png", "sizes": "192x192" }]
-    }
-  ],
-  "handle_links": "preferred",
-  "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
-  }
+  ]
 }
