@@ -168,7 +168,49 @@ listenOrder(ref.id); startTimer(30);
 }catch(e){toast('Error: '+e.message);}
 }
 function listenOrder(id){const ld=document.getElementById('liveDot'); if(ld) ld.classList.remove('hidden'); db.collection('orders').doc(id).onSnapshot(doc=>{if(!doc.exists) return; updateTrack(doc.data());});}
-function updateTrack(d){const nt=document.getElementById('noTrack'); if(nt) nt.classList.add('hidden'); const tc=document.getElementById('trackContent'); if(tc) tc.classList.remove('hidden'); document.getElementById('trackId').innerText=d.orderId; document.getElementById('otpDisplay').innerText=d.otp; document.getElementById('trackDet').innerHTML=`${d.customerName} • ${d.customerPhone}<br>${d.customerArea}, ${d.customerAddress}<br>Total ₹${d.total}`; currentOtp=d.otp;}
+function updateTrack(d){
+ const nt=document.getElementById('noTrack'); if(nt) nt.classList.add('hidden');
+ const live=document.getElementById('liveDot'); if(live) live.classList.remove('hidden');
+ const trackBox = document.getElementById('trackStatusBox');
+ if(!trackBox){
+   // create box if not exist inside trackM
+   const m = document.getElementById('trackM');
+   const c = m.querySelector('.bg-white') || m;
+   const div = document.createElement('div');
+   div.id='trackStatusBox';
+   div.className='px-4 pb-3';
+   c.appendChild(div);
+ }
+ const status = d.status || 'pending';
+ const steps = [
+   {k:'pending', t:'Order Placed', sub:'Admin confirm kori ase'},
+   {k:'confirmed', t:'Confirmed', sub:'Rider assign hoise'},
+   {k:'picked', t:'Picked', sub:'Rider e saman loi loise'},
+   {k:'out_for_delivery', t:'Out for Delivery', sub:'Rider ahi ase - OTP ready rakha'},
+   {k:'delivered', t:'Delivered', sub:'✅ Delivery hoi gol'}
+ ];
+ const curIdx = steps.findIndex(s=>s.k===status);
+ let html = '<div class="space-y-3 mt-3">';
+ steps.forEach((s,i)=>{
+   const done = i <= curIdx;
+   const active = i===curIdx;
+   html+=`<div class="flex gap-3"><div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${done?'bg-emerald-500 text-white':'bg-gray-200'}">${done?'✓':i+1}</div><div><p class="text-sm font-bold ${active?'text-emerald-600':''}">${s.t}</p><p class="text-xs text-gray-500">${s.sub}</p></div></div>`;
+ });
+ html+='</div>';
+ document.getElementById('trackStatusBox').innerHTML = html;
+
+ // bottom bar update
+ const sText = document.getElementById('activeOrderStatus');
+ if(sText){
+   if(status==='pending') sText.innerText='● Pending';
+   if(status==='confirmed') sText.innerText='● Confirmed - Rider assigned';
+   if(status==='picked') sText.innerText='● Picked - Rasta t ase';
+   if(status==='out_for_delivery') sText.innerText='● Out for Delivery - OTP diya';
+   if(status==='delivered') sText.innerText='✅ Delivered';
+ }
+ if(status==='delivered'){ localStorage.removeItem('dk_active_order'); setTimeout(()=>{document.getElementById('activeOrderBar')?.classList.add('hidden'); closeTrack();},3000); }
+}
+function closeTrack(){document.getElementById('trackM')?.classList.add('hidden');}
 function startTimer(m){let tot=m*60; if(countdown) clearInterval(countdown); countdown=setInterval(()=>{tot--; const mm=String(Math.floor(tot/60)).padStart(2,'0'); const ss=String(tot%60).padStart(2,'0'); const t=document.getElementById('timer'); if(t) t.innerText=`${mm}:${ss}`; if(tot<=0) clearInterval(countdown);},1000);}
 function openTrack(){document.getElementById('trackM').classList.remove('hidden');} function closeTrack(){document.getElementById('trackM').classList.add('hidden');}
 function openProfile(){document.getElementById('profileM').classList.remove('hidden');} function closeProfile(){document.getElementById('profileM').classList.add('hidden');}
