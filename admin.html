@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DailyKart Admin + Rider - Full Control</title>
+<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#FF6B2B">
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081648.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script>tailwind.config={theme:{extend:{colors:{primary:'#FF6B2B'}}}}</script>
+</head>
+<body class="bg-gray-50">
+<div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary to-orange-400">
+<div class="bg-white rounded-[24px] p-6 w-full max-w-[380px] shadow-2xl">
+<h2 class="font-bold text-[22px] text-center">DailyKart Control</h2><p class="text-center text-[12px] text-gray-500 mt-1">Admin & Rider Login</p>
+<div class="flex bg-gray-100 rounded-full p-1 mt-5"><button id="tabAdmin" onclick="switchLogin('admin')" class="flex-1 py-2.5 rounded-full bg-black text-white font-bold text-[13px]">Admin</button><button id="tabRider" onclick="switchLogin('rider')" class="flex-1 py-2.5 rounded-full text-[13px] font-bold">Rider</button></div>
+<div id="adminLogin" class="mt-5 space-y-3"><input id="adminUser" placeholder="Admin Username" value="admin" class="w-full px-4 py-3 rounded-xl border"><input id="adminPass" type="password" placeholder="Password" value="admin123" class="w-full px-4 py-3 rounded-xl border"><button onclick="loginAdmin()" class="w-full bg-black text-white py-3 rounded-xl font-bold">Login as Admin</button><p class="text-[10px] text-gray-400 text-center">Default: admin / admin123</p></div>
+<div id="riderLogin" class="hidden mt-5 space-y-3"><input id="riderPhone" placeholder="Rider Phone 10 digit" class="w-full px-4 py-3 rounded-xl border"><input id="riderPass" type="password" placeholder="Password" class="w-full px-4 py-3 rounded-xl border"><button onclick="loginRider()" class="w-full bg-primary text-white py-3 rounded-xl font-bold">Login as Rider</button></div>
+</div>
+</div>
+
+<div id="mainApp" class="hidden">
+<header class="sticky top-0 z-40 bg-white border-b"><div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center"><div><h1 class="font-bold text-[16px]">DailyKart Admin <span id="roleBadge" class="ml-2 px-2 py-1 rounded-full bg-primary text-white text-[10px]">ADMIN</span></h1><p class="text-[11px] text-gray-500"><span id="headerUser">-</span> • <span id="shopState">Checking</span></p></div><div class="flex gap-2 items-center"><button onclick="toggleShop()" id="shopBtn" class="bg-green-600 text-white px-5 py-2 rounded-full text-[12px] font-bold transition-all"><i class="fa-solid fa-power-off mr-1"></i><span id="shopBtnText">OPEN</span></button><button onclick="logout()" class="w-9 h-9 rounded-full bg-gray-100"><i class="fa-solid fa-right-from-bracket text-[12px]"></i></button></div></div></header>
+
+<div class="max-w-7xl mx-auto px-4 py-4 pb-24">
+<div id="panel-dashboard" class="space-y-4">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+<div class="bg-white rounded-2xl p-4 border"><p class="text-[11px] text-gray-500">Today Orders</p><p id="statOrders" class="font-bold text-[22px]">0</p></div>
+<div class="bg-white rounded-2xl p-4 border"><p class="text-[11px] text-gray-500">Today Sell</p><p id="statSell" class="font-bold text-[22px]">₹0</p></div>
+<div class="bg-white rounded-2xl p-4 border"><p class="text-[11px] text-gray-500">Pending</p><p id="statPending" class="font-bold text-[22px]">0</p></div>
+<div class="bg-white rounded-2xl p-4 border"><p class="text-[11px] text-gray-500">Riders Online</p><p id="statRiders" class="font-bold text-[22px]">0</p></div>
+</div>
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold text-[14px] mb-3">Sales Graph - Real Time</h3><canvas id="salesChart" height="120"></canvas></div>
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold text-[14px] mb-2">Order Status Graph</h3><canvas id="statusChart" height="120"></canvas></div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold text-[13px] mb-2">Recent Orders Live</h3><div id="recentLive" class="space-y-2 text-[12px]"></div></div><div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold text-[13px] mb-2">Top Info</h3><div id="topProducts" class="space-y-2 text-[12px]">Live updates</div></div></div>
+</div>
+
+<div id="panel-orders" class="hidden space-y-3">
+<div class="flex gap-2 overflow-x-auto pb-1"><button onclick="filterOrders('all')" class="filterBtn px-4 py-2 rounded-full bg-black text-white text-[12px] font-bold">All</button><button onclick="filterOrders('pending')" class="filterBtn px-4 py-2 rounded-full bg-gray-100 text-[12px]">Pending</button><button onclick="filterOrders('accepted')" class="filterBtn px-4 py-2 rounded-full bg-gray-100 text-[12px]">Accepted</button><button onclick="filterOrders('out_for_delivery')" class="filterBtn px-4 py-2 rounded-full bg-gray-100 text-[12px]">Out</button><button onclick="filterOrders('delivered')" class="filterBtn px-4 py-2 rounded-full bg-gray-100 text-[12px]">Delivered</button></div>
+<div id="orderList" class="space-y-3"></div>
+</div>
+
+<div id="panel-products" class="hidden">
+<div class="bg-white rounded-2xl p-4 border mb-4"><h3 class="font-bold mb-3">Add / Edit Product</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+<input id="pName" placeholder="Product Name" class="px-3 py-2 border rounded-xl text-[13px]"><input id="pPrice" type="number" placeholder="Price" class="px-3 py-2 border rounded-xl text-[13px]"><input id="pUnit" placeholder="Unit e.g. 1kg" class="px-3 py-2 border rounded-xl text-[13px]"><select id="pCat" class="px-3 py-2 border rounded-xl text-[13px] bg-white"></select><input id="pImg" placeholder="Image URL" class="md:col-span-2 px-3 py-2 border rounded-xl text-[13px]"><input id="pDiscount" type="number" placeholder="Discount %" class="px-3 py-2 border rounded-xl text-[13px]"><div class="flex gap-2 items-center text-[12px]"><label class="flex gap-1 items-center"><input type="checkbox" id="pFav"> Fav Big Loop</label><label class="flex gap-1 items-center"><input type="checkbox" id="pFast"> Fast 15min</label><label class="flex gap-1 items-center"><input type="checkbox" id="pNew"> New</label></div></div><button onclick="addProduct()" class="mt-3 w-full bg-primary text-white py-2.5 rounded-xl font-bold">Add Product</button></div>
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold mb-2">Products (<span id="prodCount">0</span>)</h3><div id="prodList" class="space-y-2 max-h-[600px] overflow-y-auto"></div></div>
+</div>
+
+<div id="panel-riders" class="hidden space-y-4">
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold mb-3">Add Rider - Admin Only</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-2"><input id="rName" placeholder="Rider Name" class="px-3 py-2 border rounded-xl text-[13px]"><input id="rPhone" placeholder="Rider Phone 10 digit" class="px-3 py-2 border rounded-xl text-[13px]"><input id="rPass" placeholder="Password" class="px-3 py-2 border rounded-xl text-[13px]"><select id="rArea" class="px-3 py-2 border rounded-xl text-[13px]"><option value="">Assign Area (All if empty)</option></select><input id="rVehicle" placeholder="Vehicle e.g. Bike" class="px-3 py-2 border rounded-xl text-[13px]"></div><button onclick="addRider()" class="mt-3 w-full bg-black text-white py-2.5 rounded-xl font-bold">Add Rider</button></div>
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold mb-2">Riders List</h3><div id="riderList" class="space-y-2"></div></div>
+</div>
+
+<div id="panel-settings" class="hidden space-y-4">
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold mb-3">Category Management - Add/Edit/Delete</h3><div class="flex gap-2"><input id="newCatName" placeholder="New Category e.g. Vegetables" class="flex-1 px-3 py-2 border rounded-xl text-[13px]"><button onclick="addCategory()" class="bg-black text-white px-4 py-2 rounded-xl text-[12px] font-bold">Add</button></div><div id="catListAdmin" class="mt-3 space-y-2 max-h-[200px] overflow-y-auto"></div><p class="text-[10px] text-gray-400 mt-2">Customer index t auto show hobo</p></div>
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold mb-3">App Settings - Logo/Ads</h3><div class="space-y-2"><input id="cfgName" placeholder="App Name" class="w-full px-3 py-2 border rounded-xl text-[13px]"><input id="cfgLogo" placeholder="Logo URL" class="w-full px-3 py-2 border rounded-xl text-[13px]"><input id="cfgAdsTitle" placeholder="Banner Title" class="w-full px-3 py-2 border rounded-xl text-[13px]"><input id="cfgAdsSub" placeholder="Banner Subtitle" class="w-full px-3 py-2 border rounded-xl text-[13px]"><input id="cfgAdsBadge" placeholder="Badge Text" class="w-full px-3 py-2 border rounded-xl text-[13px]"><input id="cfgAdsImg" placeholder="Banner Side Image URL" class="w-full px-3 py-2 border rounded-xl text-[13px]"><button onclick="saveConfig()" class="w-full bg-black text-white py-2.5 rounded-xl font-bold">Save App Config</button></div></div>
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold mb-3">Multi WhatsApp Numbers - Order Notifications</h3><p class="text-[11px] text-gray-500 mb-2">Order place hole ei numbers bur t WhatsApp jabo</p><div id="waList" class="space-y-2"></div><div class="flex gap-2 mt-3"><input id="newWa" placeholder="Add WhatsApp e.g. +918761958928" class="flex-1 px-3 py-2 border rounded-xl text-[13px]"><button onclick="addWaNumber()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-[12px] font-bold">Add</button></div></div>
+<div class="bg-white rounded-2xl p-4 border"><h3 class="font-bold mb-2">Admin Credentials</h3><div class="flex gap-2"><input id="setAdminUser" placeholder="Admin User" class="flex-1 px-3 py-2 border rounded-xl"><input id="setAdminPass" placeholder="New Password" class="flex-1 px-3 py-2 border rounded-xl"><button onclick="saveAdminCreds()" class="bg-black text-white px-4 py-2 rounded-xl text-[12px]">Save</button></div></div>
+</div>
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-40">
+<button onclick="switchPanel('dashboard')" data-panel="dashboard" class="navBtn flex flex-col items-center text-primary"><i class="fa-solid fa-chart-line"></i><span class="text-[10px] font-bold">Dashboard</span></button>
+<button onclick="switchPanel('orders')" data-panel="orders" class="navBtn flex flex-col items-center text-gray-400 relative"><i class="fa-solid fa-receipt"></i><span class="text-[10px]">Orders</span><span id="navOrderBadge" class="hidden absolute top-0 right-3 bg-red-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center">0</span></button>
+<button onclick="switchPanel('products')" data-panel="products" class="navBtn flex flex-col items-center text-gray-400"><i class="fa-solid fa-box"></i><span class="text-[10px]">Products</span></button>
+<button onclick="switchPanel('riders')" data-panel="riders" class="navBtn flex flex-col items-center text-gray-400"><i class="fa-solid fa-motorcycle"></i><span class="text-[10px]">Riders</span></button>
+<button onclick="switchPanel('settings')" data-panel="settings" class="navBtn flex flex-col items-center text-gray-400"><i class="fa-solid fa-gear"></i><span class="text-[10px]">Settings</span></button>
+</div>
+</div>
+<div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-black text-white px-5 py-2 rounded-full text-[12px] hidden z-50"></div>
+
+<script>
+const firebaseConfig = { apiKey: "AIzaSyDaBOIgBYqTsMrW5vca1_Y4mdGRSdU4b50", authDomain: "dailykart-bb335.firebaseapp.com", projectId: "dailykart-bb335", storageBucket: "dailykart-bb335.firebasestorage.app", messagingSenderId: "622704800253", appId: "1:622704800253:web:1a634d29e903b078d3a994" };
+firebase.initializeApp(firebaseConfig); const db=firebase.firestore();
+const AREAS=["Dirak Charali","Aamguri","Bordirak","Khatua","Hunjan","Navajyoti","Simoluguri","Uttar Bisrampur","Dakhin Bisrampur","Kailashpur","Dimbujora","Tongona","Gutibari","Tongona-Nagaon","Dirakgate","Modarkhat","Digholi-pothar","Huwonipothar","Namhullung","Tiniali Nagaon","Betoni","Wathoi","Litong","Talpothar","Hatigarh","Dumsi","Sitpani"];
+const DEFAULT_CATS=["Groceries","Snacks","Cold Drinks","Biscuits","Oil & Masala","Daily Needs","Fruits"];
+let currentRole=null,currentUser=null,allOrders=[],filter='all',salesChart=null,statusChart=null,waNumbers=[],adminCreds={user:'admin',pass:'admin123'},shopOpen=true,allCategories=[];
+AREAS.forEach(a=>{document.getElementById('rArea').innerHTML+=`<option value="${a}">${a}</option>`;});
+function toast(m){const t=document.getElementById('toast'); t.innerText=m; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500);}
+function switchLogin(t){document.getElementById('tabAdmin').className=t==='admin'?'flex-1 py-2.5 rounded-full bg-black text-white font-bold text-[13px]':'flex-1 py-2.5 rounded-full text-[13px] font-bold';document.getElementById('tabRider').className=t==='rider'?'flex-1 py-2.5 rounded-full bg-black text-white font-bold text-[13px]':'flex-1 py-2.5 rounded-full text-[13px] font-bold';document.getElementById('adminLogin').classList.toggle('hidden',t!=='admin');document.getElementById('riderLogin').classList.toggle('hidden',t!=='rider');}
+async function loginAdmin(){const u=document.getElementById('adminUser').value.trim(),p=document.getElementById('adminPass').value.trim();try{const doc=await db.collection('settings').doc('adminCreds').get();if(doc.exists)adminCreds=doc.data();}catch(e){}if(u===adminCreds.user&&p===adminCreds.pass){currentRole='admin';currentUser={name:'Admin',phone:u};startApp();}else alert('Wrong admin');}
+async function loginRider(){const phone=document.getElementById('riderPhone').value.trim(),pass=document.getElementById('riderPass').value.trim();const snap=await db.collection('riders').where('phone','==',phone).where('pass','==',pass).get();if(!snap.empty){currentRole='rider';currentUser={id:snap.docs[0].id,...snap.docs[0].data()};startApp();}else alert('Rider not found');}
+function startApp(){document.getElementById('loginScreen').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');document.getElementById('roleBadge').innerText=currentRole.toUpperCase();document.getElementById('headerUser').innerText=currentUser.name||currentUser.phone;if(currentRole==='rider'){document.querySelector('[data-panel="riders"]').classList.add('hidden');document.querySelector('[data-panel="products"]').classList.add('hidden');document.querySelector('[data-panel="settings"]').classList.add('hidden');}initData();}
+function logout(){location.reload();}
+function switchPanel(p){document.querySelectorAll('[id^="panel-"]').forEach(el=>el.classList.add('hidden'));document.getElementById('panel-'+p).classList.remove('hidden');document.querySelectorAll('.navBtn').forEach(b=>{b.classList.remove('text-primary');b.classList.add('text-gray-400');});document.querySelector(`[data-panel="${p}"]`).classList.remove('text-gray-400');document.querySelector(`[data-panel="${p}"]`).classList.add('text-primary');}
+async function initData(){
+try{const s=await db.collection('settings').doc('shop').get();if(s.exists)shopOpen=s.data().isOpen!==false;updateShopUI();}catch(e){}
+try{const cfg=await db.collection('settings').doc('appConfig').get();if(cfg.exists){const d=cfg.data();document.getElementById('cfgName').value=d.appName||'';document.getElementById('cfgLogo').value=d.logoUrl||'';document.getElementById('cfgAdsTitle').value=d.adsTitle||'';document.getElementById('cfgAdsSub').value=d.adsSub||'';document.getElementById('cfgAdsBadge').value=d.adsBadge||'';document.getElementById('cfgAdsImg').value=d.adsImage||'';}}catch(e){}
+try{const waDoc=await db.collection('settings').doc('waNumbers').get();if(waDoc.exists){waNumbers=waDoc.data().numbers||['+918761958928'];}else{waNumbers=['+918761958928'];}renderWa();}catch(e){waNumbers=['+918761958928'];renderWa();}
+db.collection('orders').orderBy('createdAt','desc').limit(100).onSnapshot(snap=>{allOrders=snap.docs.map(d=>({id:d.id,...d.data()}));renderOrders();updateStats();updateCharts();});
+db.collection('products').orderBy('createdAt','desc').onSnapshot(snap=>{document.getElementById('prodCount').innerText=snap.size;document.getElementById('prodList').innerHTML=snap.docs.map(d=>{const p=d.data();return `<div class="flex gap-2 border p-2 rounded-xl"><img src="${p.img}" class="w-12 h-12 rounded-lg object-cover"><div class="flex-1"><p class="font-bold text-[12px]">${p.name}</p><p class="text-[11px]">₹${p.price} • ${p.cat} • ${p.discount||0}% off ${p.fav?'❤️':''} ${p.fast?'⚡':''}</p><div class="flex gap-1 mt-1"><button onclick="editProd('${d.id}')" class="px-2 py-1 bg-gray-100 rounded text-[10px]">Edit</button><button onclick="delProd('${d.id}')" class="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px]">Delete</button><button onclick="toggleProd('${d.id}',${p.active})" class="px-2 py-1 ${p.active?'bg-green-50 text-green-700':'bg-gray-100'} rounded text-[10px]">${p.active?'Active':'Hidden'}</button></div></div></div>`;}).join('');});
+db.collection('riders').onSnapshot(snap=>{document.getElementById('statRiders').innerText=snap.size;document.getElementById('riderList').innerHTML=snap.docs.map(d=>{const r=d.data();return `<div class="border p-3 rounded-xl flex justify-between"><div><p class="font-bold text-[13px]">${r.name} • ${r.phone}</p><p class="text-[11px]">${r.area||'All'} • ${r.vehicle||''}</p></div><div class="flex gap-1"><button onclick="toggleRider('${d.id}',${r.active!==false})" class="px-2 py-1 bg-gray-100 rounded text-[10px]">${r.active!==false?'Disable':'Enable'}</button><button onclick="delRider('${d.id}')" class="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px]">Delete</button></div></div>`;}).join('');});
+loadCategories();
+}
+function updateShopUI(){
+const stateEl=document.getElementById('shopState');
+const btn=document.getElementById('shopBtn');
+const btnText=document.getElementById('shopBtnText');
+if(shopOpen){
+stateEl.innerText='OPEN 🟢'; stateEl.className='text-[11px] text-green-600 font-bold';
+btn.className='bg-green-600 text-white px-5 py-2 rounded-full text-[12px] font-bold';
+btnText.innerText='OPEN';
+}else{
+stateEl.innerText='CLOSED 🔴'; stateEl.className='text-[11px] text-red-600 font-bold';
+btn.className='bg-red-600 text-white px-5 py-2 rounded-full text-[12px] font-bold';
+btnText.innerText='CLOSED';
+}
+}
+async function toggleShop(){
+shopOpen=!shopOpen;
+document.getElementById('shopBtn').innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i>...';
+await db.collection('settings').doc('shop').set({isOpen:shopOpen},{merge:true});
+updateShopUI();
+toast(shopOpen?'Shop OPENED 🟢':'Shop CLOSED 🔴');
+}
+function renderWa(){document.getElementById('waList').innerHTML=waNumbers.map((n,i)=>`<div class="flex justify-between items-center border p-2 rounded-xl"><span class="text-[13px]"><i class="fa-brands fa-whatsapp text-green-600 mr-1"></i>${n}</span><button onclick="removeWa(${i})" class="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px]">Remove</button></div>`).join('');}
+async function addWaNumber(){const v=document.getElementById('newWa').value.trim();if(!v)return;if(!waNumbers.includes(v)){waNumbers.push(v);await db.collection('settings').doc('waNumbers').set({numbers:waNumbers},{merge:true});renderWa();document.getElementById('newWa').value='';toast('WhatsApp added');}}
+async function removeWa(i){waNumbers.splice(i,1);await db.collection('settings').doc('waNumbers').set({numbers:waNumbers},{merge:true});renderWa();}
+async function saveAdminCreds(){const u=document.getElementById('setAdminUser').value.trim(),p=document.getElementById('setAdminPass').value.trim();if(!u||!p)return;await db.collection('settings').doc('adminCreds').set({user:u,pass:p},{merge:true});toast('Admin saved');}
+async function saveConfig(){const data={appName:document.getElementById('cfgName').value,logoUrl:document.getElementById('cfgLogo').value,adsTitle:document.getElementById('cfgAdsTitle').value,adsSub:document.getElementById('cfgAdsSub').value,adsBadge:document.getElementById('cfgAdsBadge').value,adsImage:document.getElementById('cfgAdsImg').value};await db.collection('settings').doc('appConfig').set(data,{merge:true});toast('App Config Saved');}
+
+// CATEGORY CRUD - NEW
+function loadCategories(){
+db.collection('categories').orderBy('name').onSnapshot(snap=>{
+if(snap.empty && allCategories.length===0){
+// First time - create default cats
+DEFAULT_CATS.forEach(c=>{db.collection('categories').add({name:c,createdAt:firebase.firestore.FieldValue.serverTimestamp()});});
+}
+allCategories=snap.docs.map(d=>({id:d.id,...d.data()}));
+if(allCategories.length===0) allCategories=DEFAULT_CATS.map(n=>({name:n}));
+// Update product dropdown
+const sel=document.getElementById('pCat');
+if(sel){sel.innerHTML=allCategories.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');}
+// Admin list
+document.getElementById('catListAdmin').innerHTML=allCategories.map(c=>`<div class="flex justify-between items-center border p-2 rounded-xl"><span class="text-[13px] font-bold">${c.name}</span><div class="flex gap-1"><button onclick="editCategory('${c.id||''}','${c.name}')" class="px-2 py-1 bg-gray-100 rounded text-[10px]">Edit</button><button onclick="deleteCategory('${c.id||''}')" class="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px]">Delete</button></div></div>`).join('');
+});
+}
+async function addCategory(){const name=document.getElementById('newCatName').value.trim(); if(!name) return toast('Enter category name'); await db.collection('categories').add({name:name,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('newCatName').value=''; toast('Category added: '+name);}
+async function editCategory(id,name){if(!id){toast('Default category - add new then delete old'); return;} const newName=prompt('Edit Category Name',name); if(!newName) return; await db.collection('categories').doc(id).update({name:newName}); toast('Category updated');}
+async function deleteCategory(id){if(!id){toast('Cannot delete default, add new first'); return;} if(!confirm('Delete category?')) return; await db.collection('categories').doc(id).delete(); toast('Category deleted');}
+
+function updateStats(){document.getElementById('statOrders').innerText=allOrders.length;document.getElementById('statSell').innerText='₹'+allOrders.reduce((s,o)=>s+(o.total||0),0);document.getElementById('statPending').innerText=allOrders.filter(o=>o.status==='pending').length;document.getElementById('navOrderBadge').innerText=allOrders.filter(o=>o.status==='pending').length;document.getElementById('navOrderBadge').classList.toggle('hidden',allOrders.filter(o=>o.status==='pending').length===0);document.getElementById('recentLive').innerHTML=allOrders.slice(0,5).map(o=>`<div class="flex justify-between border-b py-1"><span>${o.orderId} • ₹${o.total}</span><span class="text-[10px] bg-orange-50 px-2 py-1 rounded-full">${o.status}</span></div>`).join('');}
+function updateCharts(){const ctx1=document.getElementById('salesChart');const last7=allOrders.slice(0,7).reverse();const labels=last7.map(o=>o.orderId.slice(-4));const data=last7.map(o=>o.total||0);if(salesChart)salesChart.destroy();salesChart=new Chart(ctx1,{type:'line',data:{labels:labels,datasets:[{label:'Sell',data:data,borderColor:'#FF6B2B',backgroundColor:'rgba(255,107,43,0.1)',fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}});const ctx2=document.getElementById('statusChart');const counts={pending:0,accepted:0,out_for_delivery:0,delivered:0};allOrders.forEach(o=>{const s=o.status||'pending';if(counts[s]!==undefined)counts[s]++;});if(statusChart)statusChart.destroy();statusChart=new Chart(ctx2,{type:'doughnut',data:{labels:Object.keys(counts),datasets:[{data:Object.values(counts),backgroundColor:['#fbbf24','#3b82f6','#f97316','#22c55e']}]},options:{responsive:true}});}
+function renderOrders(){let filtered=allOrders;if(currentRole==='rider'){filtered=allOrders.filter(o=>!o.riderId||o.riderId===currentUser.id||o.riderPhone===currentUser.phone);}if(filter!=='all')filtered=filtered.filter(o=>o.status===filter);document.getElementById('orderList').innerHTML=filtered.map(o=>{const isRider=currentRole==='rider';const otpVisible=currentRole==='admin'?`<p class="text-[11px] font-bold bg-yellow-50 border border-yellow-200 px-2 py-1 rounded mt-1">OTP: ${o.otp||'----'} (Customer: ${o.customerPhone}) - Don't share with rider before</p>`:`<p class="text-[11px] bg-gray-50 p-2 rounded mt-1">OTP: Hidden - Ask customer</p>`;const assignUI=currentRole==='admin'?`<div class="flex gap-1 mt-2"><select id="assign-${o.id}" class="text-[11px] border rounded px-2 py-1"><option value="">Assign Rider</option></select><button onclick="assignRider('${o.id}')" class="px-2 py-1 bg-black text-white rounded text-[10px]">Assign</button></div>`:'';const otpVerifyUI=isRider?`<div class="bg-yellow-50 border border-yellow-200 rounded-xl p-2 mt-2"><p class="text-[11px] font-bold">Enter Customer OTP to Deliver</p><div class="flex gap-2 mt-1"><input id="otp-${o.id}" placeholder="4 digit OTP" class="flex-1 px-2 py-1 border rounded text-[12px]"><button onclick="riderVerify('${o.id}',${o.otp||0})" class="bg-green-600 text-white px-3 py-1 rounded text-[11px]">Verify & Deliver</button></div><p id="err-${o.id}" class="hidden text-[10px] text-red-600 mt-1">Wrong OTP!</p></div>`:'';const statusBtns=currentRole==='admin'?`<div class="flex gap-1 mt-2 flex-wrap"><button onclick="updateStatus('${o.id}','accepted')" class="px-2 py-1 bg-blue-600 text-white rounded text-[10px]">Accept</button><button onclick="updateStatus('${o.id}','out_for_delivery')" class="px-2 py-1 bg-orange-500 text-white rounded text-[10px]">Out for Delivery</button><button onclick="updateStatus('${o.id}','delivered')" class="px-2 py-1 bg-green-600 text-white rounded text-[10px]">Force Delivered</button><button onclick="notifyWAs('${o.id}')" class="px-2 py-1 bg-green-50 text-green-700 border rounded text-[10px]">Notify WAs</button></div>`:`<div class="flex gap-1 mt-2"><button onclick="updateStatus('${o.id}','out_for_delivery')" class="px-2 py-1 bg-orange-500 text-white rounded text-[10px]">Start Delivery</button></div>`;return `<div class="bg-white border rounded-2xl p-3"><div class="flex justify-between"><p class="font-bold text-[12px]">${o.orderId} • ₹${o.total}</p><span class="text-[10px] px-2 py-1 rounded-full bg-orange-50 text-primary font-bold">${o.status} ${o.riderName?'• Rider: '+o.riderName:''}</span></div><p class="text-[11px] mt-1">${o.customerName} • ${o.customerPhone}<br>${o.customerArea} • ${o.customerAddress}</p><p class="text-[11px] mt-1 bg-gray-50 p-2 rounded">${o.items.map(i=>`${i.name} x${i.qty}`).join(', ')}</p>${otpVisible}${assignUI}${otpVerifyUI}${statusBtns}</div>`;}).join('');if(currentRole==='admin'){db.collection('riders').where('active','!=',false).get().then(snap=>{const riders=snap.docs.map(d=>({id:d.id,...d.data()}));filtered.forEach(o=>{const sel=document.getElementById('assign-'+o.id);if(sel){sel.innerHTML='<option value="">Assign Rider</option>'+riders.map(r=>`<option value="${r.id}">${r.name} - ${r.phone}</option>`).join('');}});});}}
+function filterOrders(f){filter=f;renderOrders();}
+async function updateStatus(id,status){await db.collection('orders').doc(id).update({status});toast('Status: '+status);}
+async function assignRider(orderId){const sel=document.getElementById('assign-'+orderId);const riderId=sel.value;if(!riderId){toast('Select rider');return;}const riderDoc=await db.collection('riders').doc(riderId).get();const rider=riderDoc.data();await db.collection('orders').doc(orderId).update({riderId:riderId,riderName:rider.name,riderPhone:rider.phone,status:'accepted'});toast('Rider assigned');}
+async function riderVerify(orderId,realOtp){const entered=document.getElementById('otp-'+orderId).value.trim();const err=document.getElementById('err-'+orderId);if(entered==realOtp){err.classList.add('hidden');await db.collection('orders').doc(orderId).update({status:'delivered',deliveredAt:firebase.firestore.FieldValue.serverTimestamp()});toast('Delivered Success!');}else{err.classList.remove('hidden');}}
+async function notifyWAs(orderId){const order=allOrders.find(o=>o.id===orderId);if(!order)return;const msg=`*Order Update*%0A${order.orderId}%0AStatus: ${order.status}%0ATotal ₹${order.total}`;waNumbers.forEach(n=>{window.open(`https://wa.me/${n.replace('+','')}?text=${msg}`,'_blank');});}
+async function addProduct(){const data={name:document.getElementById('pName').value,price:parseInt(document.getElementById('pPrice').value),unit:document.getElementById('pUnit').value,cat:document.getElementById('pCat').value,img:document.getElementById('pImg').value||'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=400',discount:parseInt(document.getElementById('pDiscount').value)||0,fav:document.getElementById('pFav').checked,fast:document.getElementById('pFast').checked,new:document.getElementById('pNew').checked,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()};if(!data.name||!data.price)return toast('Name & Price required');await db.collection('products').add(data);toast('Product Added ✅');}
+async function delProd(id){if(confirm('Delete?')){await db.collection('products').doc(id).delete();toast('Deleted');}}
+async function toggleProd(id,active){await db.collection('products').doc(id).update({active:!active});toast(active?'Hidden':'Active');}
+async function editProd(id){const doc=await db.collection('products').doc(id).get();const p=doc.data();const n=prompt('Name',p.name);if(!n)return;const pr=prompt('Price',p.price);await db.collection('products').doc(id).update({name:n,price:parseInt(pr)});toast('Updated');}
+async function addRider(){const data={name:document.getElementById('rName').value,phone:document.getElementById('rPhone').value,pass:document.getElementById('rPass').value,area:document.getElementById('rArea').value,vehicle:document.getElementById('rVehicle').value,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()};if(!data.name||!data.phone||!data.pass)return toast('Fill all');await db.collection('riders').add(data);if(!waNumbers.includes('+91'+data.phone)){waNumbers.push('+91'+data.phone);await db.collection('settings').doc('waNumbers').set({numbers:waNumbers},{merge:true});renderWa();}toast('Rider added');}
+async function delRider(id){if(confirm('Delete rider?')){await db.collection('riders').doc(id).delete();toast('Rider deleted');}}
+async function toggleRider(id,active){await db.collection('riders').doc(id).update({active:!active});toast(active?'Disabled':'Enabled');}
+</script>
+</body>
+</html>
