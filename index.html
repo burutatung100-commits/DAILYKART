@@ -232,7 +232,7 @@ async function loadMyOrders(){
   try{
     const snap=await db.collection('orders').where('customerPhone','==',phone).get();
     if(snap.empty){list.innerHTML=`<p class="text-center py-10">No orders yet</p>`; return;}
-    list.innerHTML=snap.docs.map(doc=>{
+    list.innerHTML=snap.docs.sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0)).map(doc=>{
       const d=doc.data();
       return `<div class="bg-warmBg dark:bg-darkBg border dark:border-gray-700 rounded-2xl p-3"><div class="flex justify-between"><span class="font-bold text-[13px]">${d.orderId}</span><span class="text-[10px] px-2 py-1 rounded-full bg-orange-100 text-orange-600 font-bold">${d.status}</span></div><p class="text-[11px] text-gray-500 mt-1">₹${d.total} • OTP: <b class="text-emerald-600">${d.otp}</b></p><p class="text-[11px] mt-2">${(d.items||[]).map(i=>`${i.name} x${i.qty}`).join(', ')}</p><button onclick="listenOrder('${doc.id}'); closeMyOrders(); openTrack();" class="mt-2 w-full bg-black text-white text-[11px] py-2 rounded-full font-bold">Track This Order</button></div>`;
     }).join('');
