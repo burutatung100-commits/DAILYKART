@@ -251,6 +251,7 @@ function openCategory(){document.getElementById('catM').classList.remove('hidden
 function openWish(){openMyOrders();}
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
 function toast(m){const t=document.getElementById('toast'); document.getElementById('toastMsg').innerText=m; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),3000);}
+let deferredPrompt; const installBtn=document.getElementById('installBtn'); window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;if(installBtn)installBtn.style.display='block';}); if(installBtn)installBtn.addEventListener('click',async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none';}});
 </script><!-- ACTIVE ORDER TRACKING BAR -->
 <div id="activeOrderBar" class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-emerald-500 p-3 shadow-2xl z-[9999] hidden">
   <div class="max-w-4xl mx-auto flex justify-between items-center">
@@ -265,6 +266,7 @@ function toast(m){const t=document.getElementById('toast'); document.getElementB
     </div>
   </div>
 </div><!-- MY ORDERS MODAL -->
+<button id="installBtn" style="display:none; position:fixed; bottom:85px; right:15px; z-index:9999; background:#16a34a; color:white; padding:12px 20px; border-radius:50px; border:none; font-weight:bold; box-shadow:0 4px 15px rgba(0,0,0,0.3);">⬇️ Download App</button>
 <div id="myOrdersM" class="fixed inset-0 z-[80] hidden"><div class="absolute inset-0 bg-black/50" onclick="closeMyOrders()"></div><div class="absolute bottom-0 left-0 right-0 md:top-1/2 md:-translate-y-1/2 md:left-1/2 md:-translate-x-1/2 md:w-[480px] bg-white dark:bg-darkCard md:rounded-[24px] rounded-t-[24px] max-h-[90vh] flex flex-col"><div class="p-5 border-b dark:border-gray-700 flex justify-between items-center"><h3 class="font-bold dark:text-white">📦 My Orders</h3><button onclick="closeMyOrders()" class="w-8 h-8 bg-gray-100 dark:bg-darkBg rounded-full"><i class="fa-solid fa-xmark"></i></button></div><div id="myOrdersList" class="flex-1 overflow-y-auto p-4 space-y-3"><p class="text-center py-10">Loading...</p></div></div></div>
 </body>
 </html>
