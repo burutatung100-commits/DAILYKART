@@ -239,8 +239,28 @@ async function loadMyOrders(){
   }catch(e){list.innerHTML=`<p class="text-center">Error: ${e.message}<br>Firebase index banao lagibo</p>`;}
 }
 function closeTrack(){document.getElementById('trackM')?.classList.add('hidden');}
-function startTimer(m){let tot=m*60; if(countdown) clearInterval(countdown); countdown=setInterval(()=>{tot--; const mm=String(Math.floor(tot/60)).padStart(2,'0'); const ss=String(tot%60).padStart(2,'0'); const t=document.getElementById('timer'); if(t) t.innerText=`${mm}:${ss}`; if(tot<=0) clearInterval(countdown);},1000);}
-function openTrack(){document.getElementById('trackM').classList.remove('hidden');} function closeTrack(){document.getElementById('trackM').classList.add('hidden');}
+function startTimer(m){let tot=m*60; if(countdown) clearInterval(countdown); countdown=setInterval(()=>{let mm=Math.floor(tot/60),ss=tot%60; let t=document.getElementById('timer'); if(t) t.innerText=(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss; if(--tot<0) clearInterval(countdown); },1000);}
+function openTrack(){
+  document.getElementById('trackM').classList.remove('hidden');
+  let order=null; try{order=JSON.parse(localStorage.getItem('dk_active_order')||'null');}catch(e){}
+  let trackIdEl=document.getElementById('trackId');
+  let noTrackEl=document.getElementById('noTrack');
+  let trackContentEl=document.getElementById('trackContent');
+  let trackDetEl=document.getElementById('trackDet');
+  let otpEl=document.getElementById('otpDisplay');
+  if(!order){
+    if(trackIdEl) trackIdEl.innerText='No order';
+    if(noTrackEl) noTrackEl.classList.remove('hidden');
+    if(trackContentEl) trackContentEl.classList.add('hidden');
+    return;
+  }
+  if(trackIdEl) trackIdEl.innerText='Order: '+(order.id||'DK'+Date.now());
+  if(noTrackEl) noTrackEl.classList.add('hidden');
+  if(trackContentEl) trackContentEl.classList.remove('hidden');
+  if(otpEl) otpEl.innerText=order.otp||'----';
+  if(trackDetEl) trackDetEl.innerHTML='<b>₹'+(order.total||0)+'</b> - '+(order.status||'Pending')+'<br>'+(order.address||'');
+  startTimer(30);
+}
 function openProfile(){document.getElementById('profileM').classList.remove('hidden');} function closeProfile(){document.getElementById('profileM').classList.add('hidden');}
 function saveProfile(){const n=document.getElementById('pName').value,p=document.getElementById('pPhone').value,a=document.getElementById('pArea').value,ad=document.getElementById('pAddr').value; profile={name:n,phone:p,area:a,address:ad}; localStorage.setItem('dk_profile',JSON.stringify(profile)); updateAddr(); closeProfile(); toast('Saved');}
 function updateAddr(){const p=JSON.parse(localStorage.getItem('dk_profile')||'{}'); const hl=document.getElementById('headerLocation'); if(hl) hl.innerText=p.area||'Select Area';}
