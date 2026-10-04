@@ -200,6 +200,16 @@ function updateTrack(d){
  });
  html+='</div>';
  document.getElementById('trackStatusBox').innerHTML = html;
+  // 👉 ORDERED ITEMS SHOW - EITU ADD KORA
+  const det = document.getElementById('trackDet');
+  if(det && d.items){
+    let itemsHtml = `<p class="font-bold mb-2">🛒 Ordered Items (${d.items.length})</p>`;
+    d.items.forEach(it=>{
+      itemsHtml+=`<div class="flex justify-between py-1 border-b"><span>${it.name} x${it.qty}</span><span class="font-bold">₹${it.price*it.qty}</span></div>`;
+    });
+    itemsHtml+=`<div class="flex justify-between font-bold pt-2 mt-2 border-t"><span>Total Paid</span><span class="text-primary">₹${d.total}</span></div><p class="text-[11px] mt-2 text-gray-500">${d.customerName} • ${d.customerArea}<br>${d.customerAddress}</p>`;
+    det.innerHTML = itemsHtml;
+  }
 
  // bottom bar update
  const sText = document.getElementById('activeOrderStatus');
