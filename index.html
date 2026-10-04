@@ -248,7 +248,7 @@ function openArea(){document.getElementById('areaM').classList.remove('hidden');
 function selectArea(a){document.getElementById('cArea').value=a; const pa=document.getElementById('pArea'); if(pa) pa.value=a; profile.area=a; localStorage.setItem('dk_profile',JSON.stringify(profile)); updateAddr(); closeArea(); toast(a+' selected');}
 function filterAreas(){const q=document.getElementById('areaSearch').value.toLowerCase(); document.querySelectorAll('.area-item').forEach(el=>{el.style.display=el.getAttribute('data-area').includes(q)?'flex':'none';});}
 function openCategory(){document.getElementById('catM').classList.remove('hidden');} function closeCategory(){document.getElementById('catM').classList.add('hidden');}
-function openWish(){document.getElementById('wishM').classList.remove('hidden');} function closeWish(){document.getElementById('wishM').classList.add('hidden');}
+function openWish(){openMyOrders();}
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
 function toast(m){const t=document.getElementById('toast'); document.getElementById('toastMsg').innerText=m; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),3000);}
 </script><!-- ACTIVE ORDER TRACKING BAR -->
