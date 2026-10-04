@@ -83,7 +83,16 @@ const firebaseConfig = { apiKey: "AIzaSyDaBOIgBYqTsMrW5vca1_Y4mdGRSdU4b50", auth
 firebase.initializeApp(firebaseConfig); const db=firebase.firestore();
 const ADMIN_WA="+918761958928";
 const AREAS=["Dirak Charali","Aamguri","Bordirak","Khatua","Hunjan","Navajyoti","Simoluguri","Uttar Bisrampur","Dakhin Bisrampur","Kailashpur","Dimbujora","Tongona","Gutibari","Tongona-Nagaon","Dirakgate","Modarkhat","Digholi-pothar","Huwonipothar","Namhullung","Tiniali Nagaon","Betoni","Wathoi","Litong","Talpothar","Hatigarh","Dumsi","Sitpani"];
-const CATS=["All","Groceries","Snacks","Cold Drinks","Biscuits","Oil & Masala","Daily Needs","Fruits"];
+let CATS=["All","Groceries","Snacks","Cold Drinks","Biscuits","Oil & Masala","Daily Needs","Fruits"];
+async function loadCats(){
+  try{
+    const d=await db.collection('settings').doc('categories').get();
+    if(d.exists && d.data().list){
+      CATS=["All",...d.data().list];
+    }
+  }catch(e){ console.log("Cats load error",e); }
+  renderCats();
+}
 const DEMO=[{name:"Aashirvaad Atta 5kg",price:280,cat:"Groceries",img:"https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=400",unit:"5kg",discount:10,fast:true},{name:"Fortune Oil 1L",price:145,cat:"Oil & Masala",img:"https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400",unit:"1L",discount:20,fast:true,new:true},{name:"Tata Salt",price:28,cat:"Groceries",img:"https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400",unit:"1kg",discount:0,fast:true},{name:"Maggi 12 pack",price:144,cat:"Snacks",img:"https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?w=400",unit:"12 pcs",discount:15},{name:"Coca Cola",price:40,cat:"Cold Drinks",img:"https://images.unsplash.com/photo-1553456558-aff63285bdd1?w=400",unit:"750ml"}];
 let cart=JSON.parse(localStorage.getItem('dk_cart')||'[]'); let wishlist=JSON.parse(localStorage.getItem('dk_wish')||'[]'); let selCat='All'; let allProducts=[]; let shopOpen=true; let profile=JSON.parse(localStorage.getItem('dk_profile')||'{}'); let activeOrder=localStorage.getItem('dk_active_order')||null; let countdown=null; let currentOtp=null; let popupAction='cart';
 window.addEventListener('DOMContentLoaded',()=>{populateAreas();renderCats();loadProducts();checkShop();updateAddr();updateCart();updateWish();if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark');document.getElementById('themeIcon').className='fa-solid fa-sun text-[14px] dark:text-white';} if(activeOrder)listenOrder(activeOrder);});
