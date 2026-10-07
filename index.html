@@ -171,46 +171,50 @@ listenOrder(ref.id); startTimer(30);
 }
 function listenOrder(id){const ld=document.getElementById('liveDot'); if(ld) ld.classList.remove('hidden'); db.collection('orders').doc(id).onSnapshot(doc=>{if(!doc.exists) return; updateTrack(doc.data());});}
 function updateTrack(d){
- const nt=document.getElementById('noTrack'); if(nt) nt.classList.add('hidden');
- const live=document.getElementById('liveDot'); if(live) live.classList.remove('hidden');
- const trackBox = document.getElementById('trackStatusBox');
- if(!trackBox){
-   // create box if not exist inside trackM
-   const m = document.getElementById('trackM');
-   const c = m.querySelector('.bg-white') || m;
-   const div = document.createElement('div');
-   div.id='trackStatusBox';
-   div.className='px-4 pb-3';
-   c.appendChild(div);
- }
- const status = d.status || 'pending';
- const steps = [
-   {k:'pending', t:'Order Placed', sub:'Admin confirm kori ase'},
-   {k:'confirmed', t:'Confirmed', sub:'Rider assign hoise'},
-   {k:'picked', t:'Picked', sub:'Rider e saman loi loise'},
-   {k:'out_for_delivery', t:'Out for Delivery', sub:'Rider ahi ase - OTP ready rakha'},
-   {k:'delivered', t:'Delivered', sub:'✅ Delivery hoi gol'}
- ];
- const curIdx = steps.findIndex(s=>s.k===status);
- let html = '<div class="space-y-3 mt-3">';
- steps.forEach((s,i)=>{
-   const done = i <= curIdx;
-   const active = i===curIdx;
-   html+=`<div class="flex gap-3"><div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${done?'bg-emerald-500 text-white':'bg-gray-200'}">${done?'✓':i+1}</div><div><p class="text-sm font-bold ${active?'text-emerald-600':''}">${s.t}</p><p class="text-xs text-gray-500">${s.sub}</p></div></div>`;
- });
- html+='</div>';
- document.getElementById('trackStatusBox').innerHTML = html;
-  // 👉 ORDERED ITEMS SHOW - EITU ADD KORA
-  const det = document.getElementById('trackDet');
-  if(det && d.items){
-    let itemsHtml = `<p class="font-bold mb-2">🛒 Ordered Items (${d.items.length})</p>`;
-    d.items.forEach(it=>{
-      itemsHtml+=`<div class="flex justify-between py-1 border-b"><span>${it.name} x${it.qty}</span><span class="font-bold">₹${it.price*it.qty}</span></div>`;
-    });
-    itemsHtml+=`<div class="flex justify-between font-bold pt-2 mt-2 border-t"><span>Total Paid</span><span class="text-primary">₹${d.total}</span></div><p class="text-[11px] mt-2 text-gray-500">${d.customerName} • ${d.customerArea}<br>${d.customerAddress}</p>`;
-    det.innerHTML = itemsHtml;
+  const nt=document.getElementById('noTrack'); if(nt) nt.classList.add('hidden');
+  const live=document.getElementById('liveDot'); if(live) live.classList.remove('hidden');
+  
+  // box banuwa
+  let trackBox = document.getElementById('trackStatusBox');
+  if(!trackBox){
+    const m = document.getElementById('trackM');
+    const c = m.querySelector('.bg-white') || m;
+    const div = document.createElement('div');
+    div.id='trackStatusBox'; div.className='px-4 pb-3';
+    c.appendChild(div); trackBox = div;
   }
 
+  const status = d.status || 'pending';
+  const items = d.items || d.cart || [];
+
+  // PRODUCT + OTP + TOTAL - EITU E MAIN
+  let headHtml = '';
+  if(items.length > 0){
+    headHtml = `
+      <div class="mt-2 p-3 bg-yellow-50 rounded-xl border border-yellow-200">
+        <p class="text-xs">Order: ${d.orderId || ''} | OTP: <b class="text-base text-orange-600">${d.otp || ''}</b></p>
+        ${items.map(it=>`<div class="flex justify-between text-sm py-1 border-b border-dashed"><span>${it.name} x ${it.qty}</span><span>₹${it.price*it.qty}</span></div>`).join('')}
+        <div class="flex justify-between font-bold mt-2"><span>Total</span><span>₹${d.total || ''}</span></div>
+      </div>
+    `;
+  }
+
+  const steps = [
+    {k:'pending', t:'Order Placed', sub:'Admin confirm kori ase'},
+    {k:'confirmed', t:'Confirmed', sub:'Rider assign hoise'},
+    {k:'picked', t:'Picked', sub:'Rider e saman loi loise'},
+    {k:'out_for_delivery', t:'Out for Delivery', sub:'Rider ahi ase - OTP ready rakha'},
+    {k:'delivered', t:'Delivered', sub:'✅ Delivery hoi gol'}
+  ];
+  const curIdx = steps.findIndex(s=>s.k==status);
+  let html = headHtml + '<div class="space-y-3 mt-3">';
+  steps.forEach((s,i)=>{
+    const done = i <= curIdx; const active = i===curIdx;
+    html+=`<div class="flex gap-3"><div class="w-6 h-6 rounded-full flex items-center justify-center ${done?'bg-green-500 text-white':'bg-gray-200'}">${done?'✓':i+1}</div><div><p class="font-bold text-sm ${active?'':'text-gray-400'}">${s.t}</p><p class="text-xs">${s.sub}</p></div></div>`;
+  });
+  html+='</div>';
+  trackBox.innerHTML = html;
+}
  // bottom bar update
  const sText = document.getElementById('activeOrderStatus');
  if(sText){
